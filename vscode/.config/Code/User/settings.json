@@ -1,0 +1,18 @@
+{
+    "workbench.colorTheme": "Default Light Modern",
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    "python.formatting.blackArgs": [
+        "--line-length",
+        "88"
+    ],
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.lintOnSave": true,
+    "python.linting.mypyEnabled": true,
+    "explorer.confirmDelete": false,
+    "debug.console.closeOnEnd": true,
+    "debug.focusEditorOnBreak": false,
+    "debug.openDebug": "openOnSessionStart",
+    "debug.console.focusOnSessionStart": true
+}

@@ -1,0 +1,97 @@
+// Place your key bindings in this file to override the defaults
+[
+  {
+    "key": "alt+enter",
+    "command": "sqltools.executeQueryFromFile",
+    "when": "editorTextFocus && editorLangId == 'sql'",
+  },
+  {
+    "key": "alt+enter",
+    "command": "sqltools.executeQuery",
+    "when": "editorTextFocus && editorLangId == 'sql' && editorHasSelection == true",
+  },
+  {
+    "key": "alt+enter",
+    "command": "sqltools.executeCurrentQuery",
+    "when": "editorTextFocus && editorLangId == 'sql'",
+  },
+  {
+    "key": "ctrl+i",
+    "command": "composerMode.agent"
+  },
+  {
+    "key": "alt+right",
+    "command": "editor.action.revealDeclaration",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "alt+left",
+    "command": "workbench.action.navigateBack",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "alt+enter",
+    "command": "python.execInTerminal-icon",
+    "when": "editorTextFocus && editorLangId == 'python'"
+  },
+  {
+    "key": "ctrl+l",
+    "command": "composerMode.chat"
+  },
+  {
+    "key": "ctrl+m ctrl+right",
+    "command": "workbench.action.closeEditorsInOtherGroups"
+  },
+  {
+    "key": "ctrl+m ctrl+delete",
+    "command": "workbench.action.closeEditorsInGroup"
+  },
+  {
+    "key": "ctrl+m w",
+    "command": "-workbench.action.closeEditorsInGroup"
+  },
+  {
+    "key": "ctrl+h",
+    "command": "editor.action.showHover",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+alt+h",
+    "command": "editor.actions.findWithArgs",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+up",
+    "command": "workbench.action.terminal.resizePaneUp",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+down",
+    "command": "workbench.action.terminal.resizePaneDown",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+shift+up",
+    "command": "workbench.action.terminal.scrollUp",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "ctrl+shift+down",
+    "command": "workbench.action.terminal.scrollDown",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "f5",
+    "command": "debugpy.debugInTerminal"
+  },
+  {
+    "key": "ctrl+f5",
+    "command": "workbench.debug.action.focusRepl",
+    "when": "inDebugMode"
+  },
+  {
+    "key": "alt+f5",
+    "command": "workbench.action.debug.continue",
+    "when": "inDebugMode"
+  }
+]
