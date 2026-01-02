@@ -16,10 +16,6 @@
     "when": "editorTextFocus && editorLangId == 'sql'",
   },
   {
-    "key": "ctrl+i",
-    "command": "composerMode.agent"
-  },
-  {
     "key": "alt+right",
     "command": "editor.action.revealDeclaration",
     "when": "editorTextFocus"
