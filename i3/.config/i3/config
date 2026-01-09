@@ -162,7 +162,7 @@ bindsym $mod+Shift+0 move container to workspace number $ws10; workspace number 
 
 # open programs
 bindsym $mod+F1 exec --no-startup-id firefox
-bindsym $mod+F2 exec --no-startup-id cursor
+bindsym $mod+F2 exec --no-startup-id code
 bindsym $mod+F3 exec --no-startup-id featherpad
 bindsym $mod+F4 exec --no-startup-id telegram-desktop
 for_window [class="firefox"] tiling enable
