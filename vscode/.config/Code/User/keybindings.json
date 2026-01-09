@@ -31,10 +31,6 @@
     "when": "editorTextFocus && editorLangId == 'python'"
   },
   {
-    "key": "ctrl+l",
-    "command": "composerMode.chat"
-  },
-  {
     "key": "ctrl+m ctrl+right",
     "command": "workbench.action.closeEditorsInOtherGroups"
   },
@@ -77,8 +73,14 @@
     "when": "terminalFocus"
   },
   {
-    "key": "f5",
-    "command": "debugpy.debugInTerminal"
+    "key": "shift+alt+enter",
+    "command": "runCommands",
+    "args": {
+      "commands": [
+        "debugpy.debugInTerminal",
+        "workbench.debug.action.focusRepl"
+      ]
+    }
   },
   {
     "key": "ctrl+f5",
@@ -86,8 +88,67 @@
     "when": "inDebugMode"
   },
   {
-    "key": "alt+f5",
+    "key": "f1",
     "command": "workbench.action.debug.continue",
     "when": "inDebugMode"
+  },
+  {
+    "key": "f2",
+    "command": "workbench.action.debug.stepOver",
+    "when": "inDebugMode"
+  },
+  {
+    "key": "f3",
+    "command": "workbench.action.debug.stepInto",
+    "when": "inDebugMode"
+  },
+  {
+    "key": "f4",
+    "command": "workbench.action.debug.stepOut",
+    "when": "inDebugMode"
+  },
+  {
+    "key": "f5",
+    "command": "workbench.action.debug.restart",
+    "when": "inDebugMode"
+  },
+  {
+    "key": "f6",
+    "command": "workbench.action.debug.stop",
+    "when": "inDebugMode"
+  },
+  {
+    "key": "ctrl+l",
+    "command": "workbench.panel.chat"
+  },
+  {
+    "key": "ctrl+c",
+    "command": "workbench.action.chat.cancel",
+    "when": "chatInputHasFocus"
+  },
+  {
+    "key": "alt+n",
+    "command": "chatEditor.action.undoHunk",
+    "when": "chatEdits.cursorInChangeRange && chatEdits.hasEditorModifications && editorFocus && !chatEdits.isCurrentlyBeingModified || chatEdits.cursorInChangeRange && chatEdits.hasEditorModifications && notebookCellListFocused && !chatEdits.isCurrentlyBeingModified"
+  },
+  {
+    "key": "shift+alt+n",
+    "command": "chatEditor.action.reject",
+    "when": "chatEdits.hasEditorModifications && chatEdits.isGlobalEditingSession && editorFocus && !chatEdits.isCurrentlyBeingModified || chatEdits.hasEditorModifications && chatEdits.isGlobalEditingSession && notebookEditorFocused && !chatEdits.isCurrentlyBeingModified"
+  },
+  {
+    "key": "alt+y",
+    "command": "chatEditor.action.acceptHunk",
+    "when": "chatEdits.cursorInChangeRange && chatEdits.hasEditorModifications && editorFocus && !chatEdits.isCurrentlyBeingModified || chatEdits.cursorInChangeRange && chatEdits.hasEditorModifications && notebookCellListFocused && !chatEdits.isCurrentlyBeingModified"
+  },
+  {
+    "key": "shift+alt+y",
+    "command": "chatEditor.action.acceptAllEdits",
+    "when": "chatEdits.hasEditorModifications && editorFocus && !chatEdits.isCurrentlyBeingModified || chatEdits.hasEditorModifications && notebookEditorFocused && !chatEdits.isCurrentlyBeingModified"
+  },
+  {
+    "key": "ctrl+alt+r",
+    "command": "git.clean",
+    "when": "editorTextFocus && !editorReadonly"
   }
 ]
