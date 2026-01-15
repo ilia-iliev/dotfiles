@@ -14,5 +14,14 @@
     "debug.console.closeOnEnd": true,
     "debug.focusEditorOnBreak": false,
     "debug.openDebug": "openOnSessionStart",
-    "debug.console.focusOnSessionStart": true
+    "debug.console.focusOnSessionStart": true,
+    "continue.enableNextEdit": false,
+    "chat.disableAIFeatures": true,
+    "github.copilot.enable": {
+        "*": false
+    },
+    "editor.inlineSuggest.enabled": true,
+    "terminal.integrated.commandsToSkipShell": [
+        "workbench.action.toggleSidebarVisibility"
+    ]
 }
