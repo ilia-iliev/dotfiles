@@ -23,5 +23,9 @@
     "editor.inlineSuggest.enabled": true,
     "terminal.integrated.commandsToSkipShell": [
         "workbench.action.toggleSidebarVisibility"
-    ]
+    ],
+    "continue.enableTabAutocomplete": false,
+    "[sql]": {
+        "editor.formatOnSave": false
+    }
 }

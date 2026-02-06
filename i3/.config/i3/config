@@ -25,13 +25,12 @@ exec --no-startup-id ~/.config/i3/display_setup.sh
 # Start XDG autostart .desktop files using dex. See also
 # https://wiki.archlinux.org/index.php/XDG_Autostart
 exec --no-startup-id dex --autostart --environment i3
+exec --no-startup-id flameshot
 
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
 exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 
-# add keyboard language toggle
-exec_always --no-startup-id setxkbmap -layout us,bg -variant ,phonetic -option grp:shifts_toggle
 
 # NetworkManager is the most popular way to manage wireless networks on Linux,
 # and nm-applet is a desktop environment-independent system tray GUI for it.
@@ -158,11 +157,11 @@ bindsym $mod+Shift+9 move container to workspace number $ws9; workspace number $
 bindsym $mod+Shift+0 move container to workspace number $ws10; workspace number $ws10
 
 # open programs
-bindsym $mod+F1 exec --no-startup-id firefox
+bindsym $mod+F1 exec --no-startup-id google-chrome
 bindsym $mod+F2 exec --no-startup-id code
-bindsym $mod+F3 exec --no-startup-id featherpad
-bindsym $mod+F4 exec --no-startup-id telegram-desktop
-for_window [class="firefox"] tiling enable
+bindsym $mod+F3 exec --no-startup-id firefox
+bindsym $mod+F4 exec --no-startup-id featherpad
+bindsym $mod+F12 exec --no-startup-id telegram-desktop
 
 # reload the configuration file
 bindsym $mod+Shift+c reload
@@ -206,3 +205,4 @@ bindsym $mod+r mode "resize"
 bar {
         status_command i3status
 }
+
