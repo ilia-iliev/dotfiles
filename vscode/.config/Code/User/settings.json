@@ -27,5 +27,6 @@
     "continue.enableTabAutocomplete": false,
     "[sql]": {
         "editor.formatOnSave": false
-    }
+    },
+    "latex-workshop.formatting.latex": "latexindent"
 }
