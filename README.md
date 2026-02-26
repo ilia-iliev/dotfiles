@@ -5,6 +5,5 @@ Please ensure GNU Stow is installed (e.g., `sudo apt install stow` on Debian/Ubu
 
 ## Setup
 ```bash
-stow i3
-stow vscode
+stow -t ~ i3 vscode scripts-common
 ```
