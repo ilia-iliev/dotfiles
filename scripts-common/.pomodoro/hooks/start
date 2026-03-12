@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# 1. Kill any existing instances to avoid "ghost" loops
+pkill -f "pomo_timer_loop"
+
+# 2. Run the loop in the background
+(
+    exec -a pomo_timer_loop bash -c '
+    # Define the regex pattern for "number:number"
+    RE="^[0-9]+:[0-9]+$"
+
+    while true; do
+        STATUS=$(pomo status -f "%r")
+
+        # FAST check: If status does NOT match "00:00" AND matches "digit:digit"
+        if [[ "$STATUS" =~ $RE ]] && [[ "$STATUS" != "0:00" ]]; then
+            echo "$STATUS" > /tmp/pomo_status
+        else
+            break
+        fi
+
+        sleep 5
+    done
+    '
+) &
+
+exit 0
