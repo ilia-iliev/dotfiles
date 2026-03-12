@@ -23,6 +23,7 @@ order += "tztime local"
 read_file pomo {
 	path = "/tmp/pomo_status"
 	format = "%content"
+	format_bad = ""
 }
 
 wireless _first_ {
@@ -37,6 +38,7 @@ ethernet _first_ {
 
 battery all {
         format = "[B] %percentage"
+	format_down = ""
 }
 
 disk "/" {
