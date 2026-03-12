@@ -13,11 +13,11 @@ pkill -f "pomo_timer_loop"
     while true; do
         STATUS=$(pomo status -f "%r")
 
-        if [[ "$STATUS" =~ $RE ]] && [[ "$STATUS" != "0:00" ]]; then
-            echo "$STATUS" > /tmp/pomo_status
-    	elif [[ "$STATUS" == "0:00" ]]; then
+    	if [[ "$STATUS" == "0:00" ]]; then
 	    bash "$STOP_HOOK"
             break
+        elif [[ "$STATUS" =~ $RE ]]; then
+            echo "$STATUS" > /tmp/pomo_status
     	else:
 	    break
 	fi
@@ -25,6 +25,6 @@ pkill -f "pomo_timer_loop"
         sleep 5
     done
     '
-) &
+) > /dev/null 2>&1 &
 
 exit 0
