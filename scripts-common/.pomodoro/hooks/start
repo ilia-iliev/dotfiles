@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# 1. Kill any existing instances to avoid "ghost" loops
+# Kill any existing instances to avoid "ghost" loops
 pkill -f "pomo_timer_loop"
 
-# 2. Run the loop in the background
+# Run the loop in the background
 (
     exec -a pomo_timer_loop bash -c '
     # Regex pattern for "number:number"
@@ -18,7 +18,7 @@ pkill -f "pomo_timer_loop"
             break
         elif [[ "$STATUS" =~ $RE ]]; then
             echo "$STATUS" > /tmp/pomo_status
-    	else:
+    	else
 	    break
 	fi
 
