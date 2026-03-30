@@ -1,6 +1,5 @@
 {
     "workbench.colorTheme": "Default Light Modern",
-    "python.formatting.provider": "black",
     "editor.formatOnSave": true,
     "python.formatting.blackArgs": [
         "--line-length",
@@ -15,7 +14,6 @@
     "debug.focusEditorOnBreak": false,
     "debug.openDebug": "openOnSessionStart",
     "debug.console.focusOnSessionStart": true,
-    "continue.enableNextEdit": false,
     "chat.disableAIFeatures": true,
     "github.copilot.enable": {
         "*": false
@@ -24,9 +22,11 @@
     "terminal.integrated.commandsToSkipShell": [
         "workbench.action.toggleSidebarVisibility"
     ],
-    "continue.enableTabAutocomplete": false,
     "[sql]": {
         "editor.formatOnSave": false
     },
-    "latex-workshop.formatting.latex": "latexindent"
+    "latex-workshop.formatting.latex": "latexindent",
+    "update.mode": "none",
+    "workbench.editor.enablePreview": false,
+    "editor.minimap.enabled": false
 }
