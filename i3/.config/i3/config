@@ -55,8 +55,6 @@ floating_modifier $mod
 # or left-clicking anywhere into the window while holding the floating modifier.
 tiling_drag modifier titlebar
 
-# start a terminal
-bindsym $mod+Return exec kitty
 
 # kill focused window
 bindsym $mod+q kill
@@ -157,6 +155,8 @@ bindsym $mod+Shift+9 move container to workspace number $ws9; workspace number $
 bindsym $mod+Shift+0 move container to workspace number $ws10; workspace number $ws10
 
 # open programs
+bindsym $mod+Return exec alacritty
+bindsym $mod+Shift+Return exec kitty
 bindsym $mod+F1 exec --no-startup-id google-chrome
 bindsym $mod+F2 exec --no-startup-id code
 bindsym $mod+F3 exec --no-startup-id firefox
