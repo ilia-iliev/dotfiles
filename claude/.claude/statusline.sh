@@ -6,8 +6,8 @@
 INPUT=$(cat)
  
 # Extract rate_limits with jq
-CONTEXT=$(echo "$INPUT" | jq -r '.context_window.used_percentage // 0')
-RATE_LIMIT=$(echo "$INPUT" | jq -r '.rate_limits.five_hour.used_percentage // 0')
+CONTEXT=$(echo "$INPUT" | jq -r '.context_window.used_percentage // 0 | floor')
+RATE_LIMIT=$(echo "$INPUT" | jq -r '.rate_limits.five_hour.used_percentage // 0 | floor')
 MODEL=$(echo "$INPUT" | jq -r '.model.display_name')
  
 # Convert reset time to human-readable format
