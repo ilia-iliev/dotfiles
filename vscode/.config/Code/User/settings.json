@@ -28,5 +28,6 @@
     "latex-workshop.formatting.latex": "latexindent",
     "update.mode": "none",
     "workbench.editor.enablePreview": false,
-    "editor.minimap.enabled": false
+    "editor.minimap.enabled": false,
+    "editor.unicodeHighlight.ambiguousCharacters": false
 }
