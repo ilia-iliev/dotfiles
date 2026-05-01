@@ -158,7 +158,7 @@ bindsym $mod+Shift+0 move container to workspace number $ws10; workspace number 
 bindsym $mod+Return exec alacritty --working-directory "$(xcwd)"
 bindsym $mod+Shift+Return exec kitty
 bindsym $mod+F1 exec --no-startup-id google-chrome
-bindsym $mod+F2 exec --no-startup-id code
+bindsym $mod+F2 exec --no-startup-id zed
 bindsym $mod+F3 exec --no-startup-id firefox
 bindsym $mod+F4 exec --no-startup-id featherpad
 bindsym $mod+F12 exec --no-startup-id telegram
