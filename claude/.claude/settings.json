@@ -1,12 +1,11 @@
 {
-  "model": "opus",
   "hooks": {
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "printf '\\a' > /dev/tty"
+            "command": "t=$(ps -o tty= -p $PPID | tr -d ' '); [ -n \"$t\" ] && [ \"$t\" != \"?\" ] && printf '\\a' > /dev/$t"
           }
         ]
       }
@@ -16,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '\\a' > /dev/tty"
+            "command": "t=$(ps -o tty= -p $PPID | tr -d ' '); [ -n \"$t\" ] && [ \"$t\" != \"?\" ] && printf '\\a' > /dev/$t"
           }
         ]
       }
@@ -25,5 +24,6 @@
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh"
-  }
+  },
+  "model": "opus"
 }
