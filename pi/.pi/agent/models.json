@@ -1,0 +1,13 @@
+{
+  "providers": {
+    "vllm": {
+      "baseUrl": "http://localhost:8081/v1",
+      "api": "openai-completions",
+      "apiKey": "vllm",
+      "models": [
+        { "id": "Qwen3.6-27B" ,
+	"contextWindow": 131072}
+      ]
+    }
+  }
+}

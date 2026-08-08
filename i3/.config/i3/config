@@ -24,9 +24,13 @@ exec --no-startup-id [ -f ~/.config/i3/local-i3-script.sh ] && ~/.config/i3/loca
 exec --no-startup-id ~/.local/bin/audio-inhibit.sh
 exec --no-startup-id ~/.local/bin/pomo_ticker.sh
 
+# wallpaper
+exec_always --no-startup-id feh --bg-fill ~/Pictures/wallpaper.jpg
+
 # Start XDG autostart .desktop files using dex. See also
 exec --no-startup-id dex --autostart --environment i3
-exec --no-startup-id flameshot
+# Qt tray icons do not re-dock when i3bar restarts, so respawn on reload
+exec_always --no-startup-id pkill -x flameshot; flameshot
 exec_always --no-startup-id setxkbmap -layout us,bg -variant ,phonetic -option grp:shifts_toggle
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
@@ -210,5 +214,6 @@ bindsym $mod+r mode "resize"
 # Start i3bar to display a workspace bar
 bar {
         status_command i3status
+        tray_output primary
 }
 
