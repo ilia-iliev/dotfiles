@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Mounts USB filesystems under /run/media/<user> as they are plugged in.
+# Invoked by udev; see /etc/udev/rules.d/99-usb-automount.rules
+# systemd stops each mount when its device unit goes away, so unplugging
+# unmounts it -- but see `unmount` for how to do that safely, before unplugging.
+set -uo pipefail
+
+# Mount for whoever is logged in at the physical seat. Set OWNER in
+# /etc/default/usb-automount on machines that have no graphical seat.
+[[ -r /etc/default/usb-automount ]] && . /etc/default/usb-automount
+
+seat_owner() {
+    local session
+    session=$(loginctl show-seat seat0 -p ActiveSession --value 2>/dev/null) || return 1
+    [[ -n $session ]] || return 1
+    loginctl show-session "$session" -p Name --value 2>/dev/null
+}
+
+OWNER=${OWNER:-$(seat_owner)}
+[[ -n ${OWNER:-} ]] || exit 0    # nobody is logged in; nothing to mount for
+ROOT="/run/media/$OWNER"
+
+# Drop mountpoint directories left behind by devices that are gone.
+prune() {
+    local d
+    [[ -d $ROOT ]] || return 0
+    for d in "$ROOT"/*; do
+        [[ -d $d ]] || continue
+        mountpoint -q "$d" || rmdir "$d" 2>/dev/null
+    done
+}
+
+action=${1-}
+dev=${2-}
+
+prune
+[[ $action == add && -b $dev ]] || exit 0
+
+# Leave alone anything already mounted or explicitly configured in fstab.
+findmnt -rn -S "$dev" >/dev/null 2>&1 && exit 0
+findmnt --fstab -rn -S "$dev" >/dev/null 2>&1 && exit 0
+
+# udev exports these to RUN programs; look them up when run by hand.
+if [[ -z ${ID_FS_LABEL-} && -z ${ID_FS_UUID-} ]]; then
+    while IFS='=' read -r key value; do
+        case $key in
+            ID_FS_LABEL|ID_FS_UUID) printf -v "$key" '%s' "$value" ;;
+        esac
+    done < <(udevadm info -q property -n "$dev" 2>/dev/null)
+fi
+
+name=${ID_FS_LABEL:-${ID_FS_UUID:-$(basename "$dev")}}
+name=$(printf '%s' "$name" | tr -c 'A-Za-z0-9._-' '_')
+
+target="$ROOT/$name"
+suffix=1
+while mountpoint -q "$target"; do
+    target="$ROOT/$name-$((suffix++))"
+done
+
+mkdir -p "$ROOT" && chown "$OWNER" "$ROOT" && chmod 0700 "$ROOT" || exit 1
+mkdir -p "$target" || exit 1
+
+exec systemd-mount --no-block --collect --owner="$OWNER" -o noatime "$dev" "$target"

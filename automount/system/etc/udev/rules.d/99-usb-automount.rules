@@ -1,0 +1,5 @@
+# Automount USB filesystems under /run/media/<user>.
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_BUS}=="usb", ENV{ID_FS_USAGE}=="filesystem", \
+    ENV{UDISKS_IGNORE}!="1", RUN+="/usr/local/bin/usb-automount add $devnode"
+ACTION=="remove", SUBSYSTEM=="block", ENV{ID_BUS}=="usb", \
+    RUN+="/usr/local/bin/usb-automount remove"

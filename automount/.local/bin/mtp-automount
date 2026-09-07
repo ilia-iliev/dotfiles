@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Mounts MTP devices (phones, modern Kindles) under ~/media/mtp as they are
+# plugged in, and unmounts them when they go away.
+set -uo pipefail
+
+MTP_ROOT="${HOME}/media/mtp"
+
+log() { printf '%s\n' "$*" >&2; }
+
+slug() { tr -c 'A-Za-z0-9._-' '-' <<<"$1" | tr -s '-' | sed 's/^-//; s/-$//'; }
+
+# Emits "busnum devnum name" for every attached MTP device.
+list_devices() {
+    local dev props bus num vendor model
+    for dev in /sys/bus/usb/devices/*; do
+        [[ -r "$dev/busnum" && -r "$dev/devnum" ]] || continue
+        props=$(udevadm info -q property -p "$dev" 2>/dev/null) || continue
+        grep -qx 'ID_MTP_DEVICE=1' <<<"$props" || continue
+        bus=$(<"$dev/busnum")
+        num=$(<"$dev/devnum")
+        vendor=$(sed -n 's/^ID_VENDOR=//p' <<<"$props" | head -1)
+        model=$(sed -n 's/^ID_MODEL=//p' <<<"$props" | head -1)
+        printf '%s %s %s\n' "$((10#$bus))" "$((10#$num))" "$(slug "${vendor}_${model}")"
+    done
+}
+
+is_mounted() { grep -qF " $1 fuse" /proc/self/mounts; }
+
+unmount() {
+    fusermount -u -z "$1" 2>/dev/null
+    rmdir "$1" 2>/dev/null
+}
+
+reconcile() {
+    local bus num name mp
+    local -a wanted=()
+
+    while read -r bus num name; do
+        [[ -n "$name" ]] || continue
+        wanted+=("$name")
+        mp="$MTP_ROOT/$name"
+        is_mounted "$mp" && continue
+        mkdir -p "$mp" || continue
+        if jmtpfs -device="$bus,$num" "$mp" 2>&1; then
+            log "mounted $name at $mp"
+        else
+            log "failed to mount $name (unlock the device and replug)"
+            rmdir "$mp" 2>/dev/null
+        fi
+    done < <(list_devices)
+
+    for mp in "$MTP_ROOT"/*; do
+        [[ -d "$mp" ]] || continue
+        name=$(basename "$mp")
+        [[ " ${wanted[*]-} " == *" $name "* ]] && continue
+        unmount "$mp" && log "unmounted $name"
+    done
+}
+
+unmount_all() {
+    local mp
+    for mp in "$MTP_ROOT"/*; do
+        [[ -d "$mp" ]] && unmount "$mp"
+    done
+}
+
+trap unmount_all EXIT
+
+mkdir -p "$MTP_ROOT"
+reconcile
+while read -r _; do
+    # Plug events arrive in bursts and libmtp needs a moment; drain and settle.
+    while read -r -t 2 _; do :; done
+    reconcile
+done < <(udevadm monitor --udev --subsystem-match=usb)

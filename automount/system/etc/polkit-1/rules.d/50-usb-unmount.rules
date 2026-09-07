@@ -1,0 +1,19 @@
+// Let a user at an active seat stop the transient mount units that
+// /usr/local/bin/usb-automount creates for USB media, without an admin
+// password. Scoped to that user's own /run/media/<user> mounts: every other
+// system unit still requires authentication.
+polkit.addRule(function(action, subject) {
+    if (action.id !== "org.freedesktop.systemd1.manage-units")
+        return undefined;
+    if (!subject.active)
+        return undefined;
+    var unit = action.lookup("unit");
+    if (!unit)
+        return undefined;
+    // systemd-escape --path turns /run/media/<user>/<label> into
+    // run-media-<user>-<label>.mount, encoding a literal "-" as \x2d.
+    var prefix = "run-media-" + subject.user.replace(/-/g, "\\x2d") + "-";
+    if (unit.indexOf(prefix) === 0 && /\.mount$/.test(unit))
+        return polkit.Result.YES;
+    return undefined;
+});

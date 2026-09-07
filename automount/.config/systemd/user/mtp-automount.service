@@ -1,0 +1,11 @@
+[Unit]
+Description=Automount MTP devices (phones, Kindles) under ~/media/mtp
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/mtp-automount
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
