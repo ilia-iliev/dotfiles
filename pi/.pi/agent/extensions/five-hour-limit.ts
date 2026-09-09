@@ -1,9 +1,11 @@
-import { spawn } from "node:child_process";
+import { Buffer } from "node:buffer";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 const STATUS_ID = "five-hour-limit";
+const USAGE_URL = "https://chatgpt.com/backend-api/wham/usage";
 const FIVE_HOURS_IN_MINUTES = 300;
 const REQUEST_TIMEOUT_MS = 10_000;
+const JWT_CLAIM_PATH = "https://api.openai.com/auth";
 
 interface RateLimitWindow {
 	usedPercent: number;
@@ -11,70 +13,61 @@ interface RateLimitWindow {
 	resetsAt: number | null;
 }
 
-interface RateLimitResponse {
-	rateLimits?: {
-		primary?: RateLimitWindow | null;
+interface UsageResponse {
+	rate_limit?: {
+		primary_window?: {
+			used_percent?: number;
+			limit_window_seconds?: number;
+			reset_at?: number;
+		} | null;
 	};
 }
 
-interface RpcMessage {
-	id?: number;
-	result?: RateLimitResponse;
-	error?: { message?: string };
+function accountIdFromToken(accessToken: string): string {
+	const payload = accessToken.split(".")[1];
+	if (!payload) throw new Error("OpenAI OAuth token is not a JWT");
+	const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+		[JWT_CLAIM_PATH]?: { chatgpt_account_id?: string };
+	};
+	const accountId = claims[JWT_CLAIM_PATH]?.chatgpt_account_id;
+	if (!accountId) throw new Error("OpenAI OAuth token has no account ID");
+	return accountId;
 }
 
-function readRateLimit(): Promise<RateLimitWindow> {
-	return new Promise((resolve, reject) => {
-		const child = spawn("codex", ["app-server", "--stdio", "-c", 'sandbox_mode="danger-full-access"']);
-		let output = "";
-		let settled = false;
-
-		const finish = (error?: Error, limit?: RateLimitWindow) => {
-			if (settled) return;
-			settled = true;
-			clearTimeout(timeout);
-			child.kill();
-			if (error) reject(error);
-			else if (limit) resolve(limit);
-			else reject(new Error("Codex returned no 5-hour limit"));
-		};
-
-		const timeout = setTimeout(() => finish(new Error("Codex usage request timed out")), REQUEST_TIMEOUT_MS);
-		child.on("error", (error) => finish(error));
-		child.on("exit", (code) => {
-			if (!settled) finish(new Error(`Codex usage process exited with code ${code}`));
-		});
-		child.stdout.setEncoding("utf8");
-		child.stdout.on("data", (chunk: string) => {
-			output += chunk;
-			const lines = output.split("\n");
-			output = lines.pop() ?? "";
-			for (const line of lines) {
-				if (!line.trim()) continue;
-				const message = JSON.parse(line) as RpcMessage;
-				if (message.id === 1) {
-					child.stdin.write(`${JSON.stringify({ method: "initialized", params: {} })}\n`);
-					child.stdin.write(`${JSON.stringify({ method: "account/rateLimits/read", id: 2, params: null })}\n`);
-				}
-				if (message.id !== 2) continue;
-				if (message.error) {
-					finish(new Error(message.error.message ?? "Codex usage request failed"));
-					continue;
-				}
-				const limit = message.result?.rateLimits?.primary;
-				if (limit?.windowDurationMins === FIVE_HOURS_IN_MINUTES) finish(undefined, limit);
-				else finish();
-			}
-		});
-
-		child.stdin.write(
-			`${JSON.stringify({
-				method: "initialize",
-				id: 1,
-				params: { clientInfo: { name: "pi-usage", title: "Pi usage", version: "1" }, capabilities: null },
-			})}\n`,
-		);
+export async function fetchRateLimit(
+	accessToken: string,
+	fetcher: typeof fetch = fetch,
+): Promise<RateLimitWindow> {
+	const response = await fetcher(USAGE_URL, {
+		headers: {
+			Accept: "application/json",
+			Authorization: `Bearer ${accessToken}`,
+			"ChatGPT-Account-Id": accountIdFromToken(accessToken),
+		},
+		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
 	});
+	if (!response.ok) throw new Error(`OpenAI usage request failed with status ${response.status}`);
+
+	const usage = await response.json() as UsageResponse;
+	const window = usage.rate_limit?.primary_window;
+	if (typeof window?.used_percent !== "number" || typeof window.limit_window_seconds !== "number") {
+		throw new Error("OpenAI returned no 5-hour limit");
+	}
+	if (window.limit_window_seconds / 60 !== FIVE_HOURS_IN_MINUTES) {
+		throw new Error("OpenAI returned an unexpected primary limit window");
+	}
+	return {
+		usedPercent: window.used_percent,
+		windowDurationMins: FIVE_HOURS_IN_MINUTES,
+		resetsAt: typeof window.reset_at === "number" ? window.reset_at : null,
+	};
+}
+
+async function readRateLimit(ctx: ExtensionContext): Promise<RateLimitWindow> {
+	const auth = await ctx.modelRegistry.getProviderAuth("openai-codex");
+	const accessToken = auth?.auth.apiKey;
+	if (!accessToken) throw new Error("OpenAI Codex is not authenticated in Pi");
+	return fetchRateLimit(accessToken);
 }
 
 function showRateLimit(limit: RateLimitWindow, ctx: ExtensionContext): void {
@@ -95,7 +88,7 @@ export default function (pi: ExtensionAPI) {
 
 	function refreshRateLimit(ctx: ExtensionContext): Promise<void> {
 		if (refresh) return refresh;
-		refresh = readRateLimit()
+		refresh = readRateLimit(ctx)
 			.then((limit) => {
 				showRateLimit(limit, ctx);
 				warned = false;
