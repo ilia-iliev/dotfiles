@@ -1,11 +1,11 @@
 {
   "env": {
-    "EDITOR": "zed"
+    "EDITOR": "blogawrite"
   },
   "permissions": {
     "defaultMode": "auto"
   },
-  "model": "haiku",
+  "model": "opus",
   "hooks": {
     "PostToolUse": [
       {

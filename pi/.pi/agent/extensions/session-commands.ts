@@ -62,7 +62,6 @@ function terminalCandidates(): Array<{ command: string; prefix: string[] }> {
 		if (command) candidates.push({ command, prefix: [...args, "-e"] });
 	}
 	candidates.push(
-		{ command: "i3-sensible-terminal", prefix: ["-e"] },
 		{ command: "x-terminal-emulator", prefix: ["-e"] },
 		{ command: "alacritty", prefix: ["-e"] },
 		{ command: "kitty", prefix: ["-e"] },

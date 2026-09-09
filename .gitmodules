@@ -1,0 +1,3 @@
+[submodule "SwayAudioIdleInhibit"]
+	path = SwayAudioIdleInhibit
+	url = https://github.com/ErikReider/SwayAudioIdleInhibit.git
