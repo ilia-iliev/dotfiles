@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+focused=$(swaymsg -t get_tree -r | jq -r '
+    .. | objects | select(.focused? == true)
+    | [(.app_id // ""), (.pid // "")] | @tsv
+' | head -n 1)
+IFS=$'\t' read -r app_id terminal_pid <<< "$focused"
+
+if [[ $app_id == foot && -r /proc/$terminal_pid/task/$terminal_pid/children ]]; then
+    read -r shell_pid _ < "/proc/$terminal_pid/task/$terminal_pid/children"
+    if [[ -n $shell_pid ]]; then
+        directory=$(readlink -- "/proc/$shell_pid/cwd")
+    fi
+fi
+
+if [[ -n ${directory:-} && -d $directory ]]; then
+    exec foot --working-directory="$directory"
+fi
+
+exec foot

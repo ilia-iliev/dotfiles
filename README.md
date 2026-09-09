@@ -1,9 +1,13 @@
-This repository manages my personal configuration files for i3, Sway, VS Code, Claude, and Pi using GNU Stow, simplifying synchronization across machines.
+This repository manages my personal configuration files for i3, Sway, Foot, VS Code, Claude, and Pi using GNU Stow, simplifying synchronization across machines.
 
 ## Prerequisites
-Please ensure GNU Stow is installed (e.g., `sudo apt install stow` on Debian/Ubuntu).
+Install GNU Stow:
+
+```bash
+sudo dnf install stow
+```
 
 ## Setup
 ```bash
-stow -t ~ i3 sway vscode scripts-common claude pi
+stow -t ~ i3 sway foot vscode scripts-common claude pi automount
 ```
