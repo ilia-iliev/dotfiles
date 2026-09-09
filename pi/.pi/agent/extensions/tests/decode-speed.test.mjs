@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { orderSupplementalStats } from "../footer-stats.ts";
+import { orderSupplementalStats } from "../lib/footer-stats.ts";
 
 test("puts the continuation status after price and decode speed", () => {
 	assert.deepEqual(

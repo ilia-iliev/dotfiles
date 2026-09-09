@@ -1,7 +1,7 @@
 import { relative, resolve, sep } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { orderSupplementalStats } from "./footer-stats.ts";
+import { orderSupplementalStats } from "./lib/footer-stats.ts";
 
 function formatTokens(count: number): string {
 	if (count < 1_000) return `${count}`;
