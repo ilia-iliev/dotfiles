@@ -2,14 +2,6 @@ import { relative, resolve, sep } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
-type UsageTotals = {
-	input: number;
-	output: number;
-	cacheRead: number;
-	cacheWrite: number;
-	cost: number;
-};
-
 function formatTokens(count: number): string {
 	if (count < 1_000) return `${count}`;
 	if (count < 10_000) return `${(count / 1_000).toFixed(1)}k`;
@@ -28,27 +20,13 @@ function footerPath(cwd: string): string {
 	return `~${sep}${path}`;
 }
 
-function totals(ctx: ExtensionContext): { totals: UsageTotals; cacheHitRate?: number } {
-	const result: UsageTotals = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 };
-	let cacheHitRate: number | undefined;
-
+function totalCost(ctx: ExtensionContext): number {
+	let cost = 0;
 	for (const entry of ctx.sessionManager.getEntries()) {
 		const usage = entry.type === "message" ? entry.message.usage : entry.usage;
-		if (!usage) continue;
-
-		result.input += usage.input;
-		result.output += usage.output;
-		result.cacheRead += usage.cacheRead;
-		result.cacheWrite += usage.cacheWrite;
-		result.cost += usage.cost.total;
-
-		if (entry.type === "message" && entry.message.role === "assistant") {
-			const promptTokens = usage.input + usage.cacheRead + usage.cacheWrite;
-			cacheHitRate = promptTokens > 0 ? (usage.cacheRead / promptTokens) * 100 : undefined;
-		}
+		if (usage) cost += usage.cost.total;
 	}
-
-	return { totals: result, cacheHitRate };
+	return cost;
 }
 
 export default function (pi: ExtensionAPI): void {
@@ -77,14 +55,7 @@ export default function (pi: ExtensionAPI): void {
 				},
 				invalidate() {},
 				render(width: number): string[] {
-					const { totals: usage, cacheHitRate } = totals(ctx);
 					const stats = [];
-					if (usage.input) stats.push(`↑${formatTokens(usage.input)}`);
-					if (usage.output) stats.push(`↓${formatTokens(usage.output)}`);
-					if (usage.cacheWrite) stats.push(`W${formatTokens(usage.cacheWrite)}`);
-					if (cacheHitRate !== undefined) stats.push(`CH${cacheHitRate.toFixed(1)}%`);
-					if (usage.cost) stats.push(`$${usage.cost.toFixed(2)}`);
-
 					const context = ctx.getContextUsage();
 					const contextWindow = context?.contextWindow ?? ctx.model?.contextWindow ?? 0;
 					const contextPercent = context?.percent;
@@ -92,20 +63,23 @@ export default function (pi: ExtensionAPI): void {
 						? `?/${formatTokens(contextWindow)}`
 						: `${Math.round(contextPercent)}%/${formatTokens(contextWindow)}`;
 					stats.push(
-						contextPercent !== undefined && contextPercent !== null && contextPercent > 90
+						contextPercent !== undefined && contextPercent !== null && contextPercent >= 90
 							? theme.fg("error", contextText)
-							: contextPercent !== undefined && contextPercent !== null && contextPercent > 70
+							: contextPercent !== undefined && contextPercent !== null && contextPercent >= 50
 								? theme.fg("warning", contextText)
 								: contextText,
 					);
 
+					const limit = footerData.getExtensionStatuses().get("five-hour-limit");
+					if (limit) stats.push(limit);
+					stats.push(theme.fg("dim", `$${totalCost(ctx).toFixed(2)}`));
+
 					const speed = decodeSpeed();
-					if (startMs !== null) stats.push("↓ … tok/s");
-					else if (speed > 0) stats.push(`↓ ${speed.toFixed(1)} tok/s`);
-					stats.push(...footerData.getExtensionStatuses().values());
+					if (speed > 0) stats.push(theme.fg("dim", `↓ ${speed.toFixed(1)} tok/s`));
+					else if (startMs !== null) stats.push(theme.fg("dim", "↓ … tok/s"));
 
 					let left = stats.join(" ");
-					const model = ctx.model?.id ?? "no-model";
+					const model = theme.fg("dim", ctx.model?.id ?? "no-model");
 					if (visibleWidth(left) > width) left = truncateToWidth(left, width, "...");
 					const availableForModel = width - visibleWidth(left) - 2;
 					const right = availableForModel > 0 ? truncateToWidth(model, availableForModel, "") : "";
@@ -139,4 +113,6 @@ export default function (pi: ExtensionAPI): void {
 		totalTokens += event.message.usage?.output ?? 0;
 		refresh();
 	});
+
+	pi.on("tool_execution_end", refresh);
 }

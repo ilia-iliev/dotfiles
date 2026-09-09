@@ -1,6 +1,6 @@
 {
   "env": {
-    "EDITOR": "blogawrite"
+    "EDITOR": "markatui"
   },
   "permissions": {
     "defaultMode": "auto"
