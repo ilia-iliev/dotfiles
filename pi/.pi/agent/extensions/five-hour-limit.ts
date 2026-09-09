@@ -5,9 +5,10 @@ const STATUS_ID = "five-hour-limit";
 const USAGE_URL = "https://chatgpt.com/backend-api/wham/usage";
 const FIVE_HOURS_IN_MINUTES = 300;
 const REQUEST_TIMEOUT_MS = 10_000;
+const CONTINUE_DELAY_MS = 3 * 60 * 1_000;
 const JWT_CLAIM_PATH = "https://api.openai.com/auth";
 
-interface RateLimitWindow {
+export interface RateLimitWindow {
 	usedPercent: number;
 	windowDurationMins: number | null;
 	resetsAt: number | null;
@@ -20,6 +21,48 @@ interface UsageResponse {
 			limit_window_seconds?: number;
 			reset_at?: number;
 		} | null;
+	};
+}
+
+type ScheduleTimer = (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
+type CancelTimer = (timer: ReturnType<typeof setTimeout>) => void;
+
+export function createContinuationScheduler(
+	sendContinue: () => void,
+	now: () => number = Date.now,
+	scheduleTimer: ScheduleTimer = setTimeout,
+	cancelTimer: CancelTimer = clearTimeout,
+) {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	let scheduledForMs: number | undefined;
+	let claimed = false;
+	let sent = false;
+	let stopped = false;
+
+	return {
+		consider(limit: RateLimitWindow): void {
+			if (stopped || claimed || limit.usedPercent < 90 || limit.resetsAt === null) return;
+
+			claimed = true;
+			scheduledForMs = limit.resetsAt * 1_000 + CONTINUE_DELAY_MS;
+			const delay = Math.max(0, scheduledForMs - now());
+			timer = scheduleTimer(() => {
+				timer = undefined;
+				scheduledForMs = undefined;
+				if (stopped || sent) return;
+				sent = true;
+				sendContinue();
+			}, delay);
+		},
+		scheduledFor(): number | undefined {
+			return scheduledForMs;
+		},
+		stop(): void {
+			stopped = true;
+			if (timer !== undefined) cancelTimer(timer);
+			timer = undefined;
+			scheduledForMs = undefined;
+		},
 	};
 }
 
@@ -70,27 +113,38 @@ async function readRateLimit(ctx: ExtensionContext): Promise<RateLimitWindow> {
 	return fetchRateLimit(accessToken);
 }
 
-function showRateLimit(limit: RateLimitWindow, ctx: ExtensionContext): void {
-	const remaining = Math.max(0, Math.min(100, Math.round(100 - limit.usedPercent)));
-	const color = remaining <= 10 ? "error" : remaining <= 30 ? "warning" : "dim";
-	const reset = limit.resetsAt === null ? "--:--" : new Date(limit.resetsAt * 1_000).toLocaleTimeString([], {
+function formatTime(timestampMs: number): string {
+	return new Date(timestampMs).toLocaleTimeString([], {
 		hour: "2-digit",
 		minute: "2-digit",
 		hour12: false,
 	});
+}
+
+function showRateLimit(limit: RateLimitWindow, scheduledFor: number | undefined, ctx: ExtensionContext): void {
+	const remaining = Math.max(0, Math.min(100, Math.round(100 - limit.usedPercent)));
+	const color = remaining <= 10 ? "error" : remaining <= 30 ? "warning" : "dim";
+	const reset = limit.resetsAt === null ? "--:--" : formatTime(limit.resetsAt * 1_000);
 	const percentage = ctx.ui.theme.fg(color, `${remaining}%`);
-	ctx.ui.setStatus(STATUS_ID, `${percentage} ${ctx.ui.theme.fg("dim", reset)}`);
+	const scheduled = scheduledFor === undefined
+		? ""
+		: ctx.ui.theme.fg("accent", " → continue");
+	ctx.ui.setStatus(STATUS_ID, `${percentage} ${ctx.ui.theme.fg("dim", reset)}${scheduled}`);
 }
 
 export default function (pi: ExtensionAPI) {
 	let refresh: Promise<void> | undefined;
+	let continuationScheduler: ReturnType<typeof createContinuationScheduler> | undefined;
+	let latestLimit: RateLimitWindow | undefined;
 	let warned = false;
 
 	function refreshRateLimit(ctx: ExtensionContext): Promise<void> {
 		if (refresh) return refresh;
 		refresh = readRateLimit(ctx)
 			.then((limit) => {
-				showRateLimit(limit, ctx);
+				latestLimit = limit;
+				continuationScheduler?.consider(limit);
+				showRateLimit(limit, continuationScheduler?.scheduledFor(), ctx);
 				warned = false;
 			})
 			.catch((error: Error) => {
@@ -103,8 +157,24 @@ export default function (pi: ExtensionAPI) {
 		return refresh;
 	}
 
-	pi.on("session_start", async (_event, ctx) => refreshRateLimit(ctx));
+	pi.on("session_start", async (_event, ctx) => {
+		continuationScheduler?.stop();
+		latestLimit = undefined;
+		continuationScheduler = ctx.mode === "tui"
+			? createContinuationScheduler(() => {
+				if (latestLimit) showRateLimit(latestLimit, undefined, ctx);
+				if (ctx.isIdle()) pi.sendUserMessage("continue");
+				else pi.sendUserMessage("continue", { deliverAs: "followUp" });
+			})
+			: undefined;
+		return refreshRateLimit(ctx);
+	});
 	pi.on("tool_execution_end", async (_event, ctx) => refreshRateLimit(ctx));
 	pi.on("agent_settled", async (_event, ctx) => refreshRateLimit(ctx));
-	pi.on("session_shutdown", (_event, ctx) => ctx.ui.setStatus(STATUS_ID, undefined));
+	pi.on("session_shutdown", (_event, ctx) => {
+		continuationScheduler?.stop();
+		continuationScheduler = undefined;
+		latestLimit = undefined;
+		ctx.ui.setStatus(STATUS_ID, undefined);
+	});
 }
