@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Markatui
+Exec=foot -e markatui %f
+TryExec=markatui
+Terminal=false
+MimeType=text/markdown;
