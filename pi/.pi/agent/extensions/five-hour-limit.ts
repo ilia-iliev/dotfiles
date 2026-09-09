@@ -24,6 +24,10 @@ interface UsageResponse {
 	};
 }
 
+export function isUsageLimitError(errorMessage: string | undefined): boolean {
+	return errorMessage?.toLowerCase().includes("hit your chatgpt usage limit") ?? false;
+}
+
 type ScheduleTimer = (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
 type CancelTimer = (timer: ReturnType<typeof setTimeout>) => void;
 
@@ -40,8 +44,8 @@ export function createContinuationScheduler(
 	let stopped = false;
 
 	return {
-		consider(limit: RateLimitWindow): void {
-			if (stopped || claimed || limit.usedPercent < 90 || limit.resetsAt === null) return;
+		schedule(limit: RateLimitWindow): void {
+			if (stopped || claimed || limit.resetsAt === null) return;
 
 			claimed = true;
 			scheduledForMs = limit.resetsAt * 1_000 + CONTINUE_DELAY_MS;
@@ -133,23 +137,24 @@ function showRateLimit(limit: RateLimitWindow, scheduledFor: number | undefined,
 }
 
 export default function (pi: ExtensionAPI) {
-	let refresh: Promise<void> | undefined;
+	let refresh: Promise<RateLimitWindow | undefined> | undefined;
 	let continuationScheduler: ReturnType<typeof createContinuationScheduler> | undefined;
 	let latestLimit: RateLimitWindow | undefined;
 	let warned = false;
 
-	function refreshRateLimit(ctx: ExtensionContext): Promise<void> {
+	function refreshRateLimit(ctx: ExtensionContext): Promise<RateLimitWindow | undefined> {
 		if (refresh) return refresh;
 		refresh = readRateLimit(ctx)
 			.then((limit) => {
 				latestLimit = limit;
-				continuationScheduler?.consider(limit);
 				showRateLimit(limit, continuationScheduler?.scheduledFor(), ctx);
 				warned = false;
+				return limit;
 			})
 			.catch((error: Error) => {
 				if (!warned) ctx.ui.notify(`Could not read Codex usage: ${error.message}`, "warning");
 				warned = true;
+				return undefined;
 			})
 			.finally(() => {
 				refresh = undefined;
@@ -170,6 +175,13 @@ export default function (pi: ExtensionAPI) {
 		return refreshRateLimit(ctx);
 	});
 	pi.on("tool_execution_end", async (_event, ctx) => refreshRateLimit(ctx));
+	pi.on("message_end", async (event, ctx) => {
+		if (event.message.role !== "assistant" || !isUsageLimitError(event.message.errorMessage)) return;
+		const limit = await refreshRateLimit(ctx);
+		if (!limit) return;
+		continuationScheduler?.schedule(limit);
+		showRateLimit(limit, continuationScheduler?.scheduledFor(), ctx);
+	});
 	pi.on("agent_settled", async (_event, ctx) => refreshRateLimit(ctx));
 	pi.on("session_shutdown", (_event, ctx) => {
 		continuationScheduler?.stop();

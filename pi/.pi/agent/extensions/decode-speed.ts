@@ -1,6 +1,7 @@
 import { relative, resolve, sep } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { orderSupplementalStats } from "./footer-stats.ts";
 
 function formatTokens(count: number): string {
 	if (count < 1_000) return `${count}`;
@@ -71,12 +72,12 @@ export default function (pi: ExtensionAPI): void {
 					);
 
 					const limit = footerData.getExtensionStatuses().get("five-hour-limit");
-					if (limit) stats.push(limit);
-					stats.push(theme.fg("dim", `$${totalCost(ctx).toFixed(2)}`));
-
+					const cost = theme.fg("dim", `$${totalCost(ctx).toFixed(2)}`);
 					const speed = decodeSpeed();
-					if (speed > 0) stats.push(theme.fg("dim", `↓ ${speed.toFixed(1)} tok/s`));
-					else if (startMs !== null) stats.push(theme.fg("dim", "↓ … tok/s"));
+					const speedText = speed > 0
+						? theme.fg("dim", `↓ ${speed.toFixed(1)} tok/s`)
+						: startMs !== null ? theme.fg("dim", "↓ … tok/s") : undefined;
+					stats.push(...orderSupplementalStats(cost, speedText, limit));
 
 					let left = stats.join(" ");
 					const model = theme.fg("dim", ctx.model?.id ?? "no-model");
