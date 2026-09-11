@@ -27,7 +27,7 @@ exec --no-startup-id ~/.local/bin/audio-inhibit.sh
 exec_always --no-startup-id feh --bg-fill ~/Pictures/wallpaper.jpg
 
 # Start XDG autostart .desktop files using dex. See also
-exec --no-startup-id dex --autostart --environment i3
+exec --no-startup-id dex-autostart --autostart --environment i3
 # Qt tray icons do not re-dock when i3bar restarts, so respawn on reload
 exec_always --no-startup-id pkill -x flameshot; flameshot
 exec_always --no-startup-id setxkbmap -layout us,bg -variant ,phonetic -option grp:shifts_toggle

@@ -13,13 +13,13 @@ assert_contains() {
 }
 
 assert_contains install.sh '"$REPO_ROOT/install/components/pomobar.sh"'
-assert_contains install.sh 'dex nm-applet udiskie flameshot'
+assert_contains install.sh 'dex-autostart nm-applet udiskie flameshot'
 assert_contains install.sh 'xss-lock setxkbmap'
 
 for package in dex-autostart network-manager-applet udiskie flameshot pulseaudio-utils i3status; do
     assert_contains install/packages-common.txt "$package"
 done
-for package in xss-lock xorg-x11-xkb-utils; do
+for package in xss-lock setxkbmap xset; do
     assert_contains install/packages-i3.txt "$package"
 done
 

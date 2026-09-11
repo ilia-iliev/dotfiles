@@ -8,5 +8,6 @@ scrot
 xclip
 unclutter-xfixes
 xss-lock
-xorg-x11-xkb-utils
+setxkbmap
+xset
 kitty

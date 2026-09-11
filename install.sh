@@ -24,6 +24,14 @@ install_packages() {
     sudo dnf install -y "${packages[@]}"
 }
 
+install_components() {
+    "$REPO_ROOT/install/components/yazi.sh"
+    "$REPO_ROOT/install/components/pomobar.sh"
+    if [[ $profile == sway ]]; then
+        "$REPO_ROOT/install/components/sway-audio-idle-inhibit.sh"
+    fi
+}
+
 stow_dotfiles() {
     local -a packages=(scripts-common claude pi automount "$profile")
     [[ $profile == sway ]] && packages+=(foot)
@@ -43,9 +51,9 @@ install_automount() {
 }
 
 verify_commands() {
-    local -a common=(git stow yazi ya jq rclone pomo dex nm-applet udiskie flameshot pactl i3status)
+    local -a common=(git stow yazi ya jq rclone pomo dex-autostart nm-applet udiskie flameshot pactl i3status)
     local -a sway=(sway foot swaybg swayidle swaylock rofi grim wl-copy sway-audio-idle-inhibit)
-    local -a i3=(i3 i3lock alacritty dmenu feh scrot xclip xss-lock setxkbmap)
+    local -a i3=(i3 i3lock alacritty dmenu feh scrot xclip xss-lock setxkbmap xset)
     local -a required missing=()
     local command
 
@@ -84,27 +92,29 @@ report_manual_setup() {
     fi
 }
 
-(($# == 1)) || usage
-profile=$1
-[[ $profile == sway || $profile == i3 ]] || usage
-[[ ${EUID:-$(id -u)} -ne 0 ]] || {
-    printf 'Run this installer as your user; it invokes sudo when needed.\n' >&2
-    exit 1
-}
-command -v dnf >/dev/null || {
-    printf 'This installer currently supports Fedora/dnf only.\n' >&2
-    exit 1
+main() {
+    (($# == 1)) || usage
+    profile=$1
+    [[ $profile == sway || $profile == i3 ]] || usage
+    [[ ${EUID:-$(id -u)} -ne 0 ]] || {
+        printf 'Run this installer as your user; it invokes sudo when needed.\n' >&2
+        exit 1
+    }
+    command -v dnf >/dev/null || {
+        printf 'This installer currently supports Fedora/dnf only.\n' >&2
+        exit 1
+    }
+
+    install_packages
+    install_components
+    stow_dotfiles
+    install_automount
+    verify_commands
+    report_manual_setup
+
+    printf '%s profile installed.\n' "$profile"
 }
 
-install_packages
-"$REPO_ROOT/install/components/yazi.sh"
-"$REPO_ROOT/install/components/pomobar.sh"
-if [[ $profile == sway ]]; then
-    "$REPO_ROOT/install/components/sway-audio-idle-inhibit.sh"
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+    main "$@"
 fi
-stow_dotfiles
-install_automount
-verify_commands
-report_manual_setup
-
-printf '%s profile installed.\n' "$profile"
