@@ -11,11 +11,8 @@ font pango:monospace 8
 # text rendering and scalability on retina/hidpi displays (thanks to pango).
 #font pango:DejaVu Sans Mono 8
 
-# Displays
-output DP-3 mode 1920x1080@60Hz position 0 0
-# This panel only exposes its native 3072x1920 mode; use scale to enlarge UI.
-# 3072/2.5 = 1228 logical px wide, placed to the right of DP-3.
-output eDP-1 scale 2 position 1920 0
+# Optional machine-specific settings are intentionally not tracked.
+include ~/.config/sway/machine.d/*
 
 # wallpaper
 exec_always --no-startup-id swaybg -i ~/Pictures/wallpaper.jpg -m fill

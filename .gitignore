@@ -4,3 +4,6 @@ pi/.pi/agent/models-store.json
 pi/.pi/agent/sessions/
 scripts-common/.pomodoro/current
 scripts-common/.pomodoro/history
+sway/.config/sway/machine.d/
+.build/
+.ruff_cache/
