@@ -1,0 +1,27 @@
+# Repository and dotfile management
+git
+stow
+curl
+unzip
+
+# Shared command-line tools
+jq
+rclone
+file
+fd-find
+ripgrep
+fzf
+zoxide
+
+# Shared desktop tools
+dex-autostart
+network-manager-applet
+udiskie
+flameshot
+pulseaudio-utils
+i3status
+
+# Yazi previews
+ffmpegthumbnailer
+ImageMagick
+poppler-utils

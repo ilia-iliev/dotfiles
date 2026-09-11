@@ -1,0 +1,16 @@
+# Sway session
+sway
+foot
+swaybg
+swayidle
+swaylock
+rofi
+grim
+wl-clipboard
+
+# SwayAudioIdleInhibit build dependencies
+gcc-c++
+meson
+pkgconf-pkg-config
+systemd-devel
+pulseaudio-libs-devel

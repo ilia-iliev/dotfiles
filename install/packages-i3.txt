@@ -1,0 +1,12 @@
+# i3 session
+i3
+i3lock
+alacritty
+dmenu
+feh
+scrot
+xclip
+unclutter-xfixes
+xss-lock
+xorg-x11-xkb-utils
+kitty
