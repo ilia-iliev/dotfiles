@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# GPU utilisation for i3status/swaybar, as one segment per GPU.
+#
+# nvidia-smi pays an NVML initialisation on every invocation (~35ms, mostly
+# driver ioctls), which is far too much to spend in the bar's render path. A
+# single streaming nvidia-smi is therefore started once and left to emit
+# samples, keeping a pre-rendered line in a state file that rendering only has
+# to read. The poller is a child of the status pipeline, so it starts, restarts
+# and dies with the bar.
+#
+# AMD and Intel expose utilisation through sysfs, which is a plain file read
+# and needs no poller at all.
+
+set -uo pipefail
+
+POLL_SECONDS=5
+STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/gpu-status.$$"
+
+poller_pid=
+
+usage() {
+    printf 'usage: %s {render|wrap}\n' "${0##*/}" >&2
+    exit 2
+}
+
+# The poller runs as its own process group (see "set -m" in wrap), so that
+# signalling it takes nvidia-smi down with it rather than orphaning it.
+cleanup() {
+    [[ -n $poller_pid ]] && kill -- -"$poller_pid" 2>/dev/null
+    rm -f "$STATE_FILE"
+}
+
+write_state() {
+    local text=$1 temp="$STATE_FILE.tmp"
+    printf '%s\n' "$text" >"$temp" && mv "$temp" "$STATE_FILE"
+}
+
+sysfs_files() {
+    local file
+    for file in /sys/class/drm/card*/device/gpu_busy_percent; do
+        [[ -r $file ]] && printf '%s\n' "$file"
+    done
+}
+
+# A sample is one line per GPU, so a complete set is known by its line count.
+poll_nvidia() {
+    local count=$1 parent=$2
+    local index util used
+    local -a segments=()
+
+    while IFS=', ' read -r index util used; do
+        # cleanup cannot run if the bar is killed outright rather than asked to
+        # stop, so the poller also gives up once nothing is left to render for.
+        kill -0 "$parent" 2>/dev/null || break
+        segments+=("$util% $((used / 1024))G")
+        if ((${#segments[@]} == count)); then
+            write_state "[G] ${segments[*]}"
+            segments=()
+        fi
+    done < <(nvidia-smi --query-gpu=index,utilization.gpu,memory.used \
+        --format=csv,noheader,nounits --loop="$POLL_SECONDS" 2>/dev/null)
+}
+
+start_poller() {
+    local count
+    command -v nvidia-smi >/dev/null || return 1
+    count=$(nvidia-smi --list-gpus 2>/dev/null | grep -c .)
+    ((count > 0)) || return 1
+
+    poll_nvidia "$count" "$$" &
+    poller_pid=$!
+}
+
+render_sysfs() {
+    local file util
+    local -a files segments=()
+    mapfile -t files < <(sysfs_files)
+    ((${#files[@]} > 0)) || return
+
+    for file in "${files[@]}"; do
+        read -r util <"$file" || continue
+        segments+=("$util%")
+    done
+    printf '[G] %s' "${segments[*]}"
+}
+
+render() {
+    local line
+    if [[ -s $STATE_FILE ]]; then
+        read -r line <"$STATE_FILE" && printf '%s' "$line"
+        return
+    fi
+    [[ -n $poller_pid ]] && return
+    render_sysfs
+}
+
+wrap() {
+    local json=0 line text rest
+
+    trap cleanup EXIT INT TERM HUP
+    # Job control puts the poller in its own process group, which is what
+    # makes the group kill in cleanup possible.
+    set -m
+    start_poller
+    set +m
+
+    while IFS= read -r line || [[ -n $line ]]; do
+        # The i3bar header identifies the stream. Do not treat it as a plain
+        # status line, and leave the opening array delimiter alone.
+        if ((json == 0)) && [[ ${line#\{} != "$line" ]]; then
+            json=1
+            printf '%s\n' "$line"
+            continue
+        fi
+
+        text=$(render)
+        if [[ -z $text ]]; then
+            printf '%s\n' "$line"
+            continue
+        fi
+
+        if ((json == 1)); then
+            case $line in
+                ',['*) printf ',[{"full_text":"%s"},%s\n' "$text" "${line#,[}" ;;
+                '['*)
+                    # A bare "[" opens the stream and carries no blocks to
+                    # prepend to. Injecting into it would emit invalid JSON.
+                    rest=${line#[}
+                    if [[ -n $rest ]]; then
+                        printf '[{"full_text":"%s"},%s\n' "$text" "$rest"
+                    else
+                        printf '%s\n' "$line"
+                    fi
+                    ;;
+                *) printf '%s\n' "$line" ;;
+            esac
+        else
+            # Plain text mode joins with i3status' own separator, unless the
+            # rest of the line already starts with one.
+            if [[ $line == "|"* || $line == " |"* ]]; then
+                printf '%s%s\n' "$text" "$line"
+            else
+                printf '%s | %s\n' "$text" "$line"
+            fi
+        fi
+    done
+}
+
+case ${1:-} in
+    render)
+        [[ $# -eq 1 ]] || usage
+        render
+        printf '\n'
+        ;;
+    wrap)
+        [[ $# -eq 1 ]] || usage
+        wrap
+        ;;
+    *) usage ;;
+esac

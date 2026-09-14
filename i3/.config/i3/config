@@ -212,7 +212,7 @@ bindsym $mod+r mode "resize"
 
 # Start i3bar to display a workspace bar
 bar {
-        status_command i3status | pomo wrap
+        status_command i3status | bar-units | gpu-status wrap | pomo wrap
         tray_output primary
 }
 

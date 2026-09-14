@@ -191,7 +191,7 @@ bindsym $mod+r mode "resize"
 
 # Minimal status bar
 bar {
-        status_command i3status | pomo wrap
+        status_command i3status | bar-units | gpu-status wrap | pomo wrap
 
         colors {
                 background #222222
