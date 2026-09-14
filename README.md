@@ -17,6 +17,7 @@ The installer:
 - installs Fedora packages with DNF;
 - installs pinned Yazi and Pomobar releases;
 - downloads and builds a pinned SwayAudioIdleInhibit release for the Sway profile;
+- clones markatui if needed, builds it, and links the build into `~/.local/bin`;
 - stows shared and desktop-specific dotfiles;
 - installs the automount system files;
 - checks required commands and reports manual setup.
@@ -43,5 +44,6 @@ The installer reports state that cannot be kept safely in this repository:
 
 - `~/Pictures/wallpaper.jpg`
 - the `rclone` remote named `google_drive`
+- a Rust toolchain (rustup, 1.95 or newer) for the markatui build
 - optional machine-specific Sway settings under `~/.config/sway/machine.d/`
 - optional graphical applications from third-party repositories

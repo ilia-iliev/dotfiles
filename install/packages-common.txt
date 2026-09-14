@@ -25,3 +25,6 @@ i3status
 ffmpegthumbnailer
 ImageMagick
 poppler-utils
+
+# markatui build
+rustup
