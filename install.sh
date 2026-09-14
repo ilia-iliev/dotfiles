@@ -54,7 +54,7 @@ install_automount() {
 verify_commands() {
     local -a common=(git stow yazi ya jq rclone pomo dex-autostart nm-applet udiskie flameshot pactl i3status markatui)
     local -a sway=(sway foot swaybg swayidle swaylock rofi grim wl-copy sway-audio-idle-inhibit)
-    local -a i3=(i3 i3lock alacritty dmenu feh scrot xclip xss-lock setxkbmap xset)
+    local -a i3=(i3 i3lock alacritty dmenu feh scrot xclip xdotool xss-lock setxkbmap xset)
     local -a required missing=()
     local command
 

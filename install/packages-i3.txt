@@ -6,6 +6,7 @@ dmenu
 feh
 scrot
 xclip
+xdotool
 unclutter-xfixes
 xss-lock
 setxkbmap

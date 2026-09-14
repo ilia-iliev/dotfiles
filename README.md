@@ -47,3 +47,11 @@ The installer reports state that cannot be kept safely in this repository:
 - a Rust toolchain (rustup, 1.95 or newer) for the markatui build
 - optional machine-specific Sway settings under `~/.config/sway/machine.d/`
 - optional graphical applications from third-party repositories
+- sourcing `~/.bashrc.d/*.sh` from `~/.bashrc`:
+
+```bash
+for shell_config in "$HOME"/.bashrc.d/*.sh; do
+    [ -r "$shell_config" ] && . "$shell_config"
+done
+unset shell_config
+```

@@ -1,38 +1,53 @@
 import assert from "node:assert/strict";
-import { readdir } from "node:fs/promises";
 import test from "node:test";
 
-import { alertTerminal, findFootPid, markFootUrgent } from "../terminal-alert.ts";
+import { resolveTerminalTarget, sendNotification } from "../terminal-alert.ts";
 
-const extensionDirectory = new URL("../", import.meta.url);
-
-test("uses one terminal-independent bell extension", async () => {
-	const extensionFiles = await readdir(extensionDirectory);
-	assert.equal(extensionFiles.includes("alacritty-bell.ts"), false);
-	assert.equal(extensionFiles.includes("foot-urgent.ts"), false);
-
-	let output = "";
-	alertTerminal((value) => {
-		output += value;
+test("targets the Alacritty window attached to this tmux session", () => {
+	const files = new Map([
+		["/proc/86339/environ", "TERM=alacritty\0ALACRITTY_WINDOW_ID=67108869\0"],
+	]);
+	const target = resolveTerminalTarget(
+		{ ALACRITTY_WINDOW_ID: "2097157", TMUX: "/tmp/tmux/default,4518,3" },
+		() => "86339\n",
+		(path) => files.get(path),
+	);
+	assert.deepEqual(target, {
+		command: "xdotool",
+		args: ["set_window", "--urgency", "1", "67108869"],
 	});
-	assert.equal(output, "\x07");
 });
 
-test("detects Foot in the process ancestry and marks its window urgent", () => {
+test("targets Foot through the tmux client's process ancestry", () => {
 	const files = new Map([
+		["/proc/30/environ", "TERM=foot\0"],
 		["/proc/30/comm", "bash\n"],
 		["/proc/30/status", "Name:\tbash\nPPid:\t20\n"],
 		["/proc/20/comm", "foot\n"],
 	]);
-	const readProcessFile = (path) => files.get(path);
-	assert.equal(findFootPid(30, readProcessFile), 20);
-
-	let invocation;
-	markFootUrgent(20, (command, args, options) => {
-		invocation = { command, args, options };
-		return { unref() {} };
+	const target = resolveTerminalTarget(
+		{ TMUX: "/tmp/tmux/default,1,1" },
+		() => "30\n",
+		(path) => files.get(path),
+	);
+	assert.deepEqual(target, {
+		command: "swaymsg",
+		args: ["[pid=20]", "urgent", "enable"],
 	});
-	assert.equal(invocation.command, "swaymsg");
-	assert.deepEqual(invocation.args, ["[pid=20]", "urgent", "enable"]);
-	assert.equal(invocation.options.detached, true);
+});
+
+test("sends only the targeted notification", () => {
+	let invocation;
+	sendNotification(
+		{ command: "xdotool", args: ["set_window", "--urgency", "1", "42"] },
+		(command, args, options) => {
+			invocation = { command, args, options };
+			return { unref() {} };
+		},
+	);
+	assert.deepEqual(invocation, {
+		command: "xdotool",
+		args: ["set_window", "--urgency", "1", "42"],
+		options: { detached: true, stdio: "ignore" },
+	});
 });

@@ -20,7 +20,7 @@ assert_contains install.sh 'xss-lock setxkbmap'
 for package in dex-autostart network-manager-applet udiskie flameshot pulseaudio-utils i3status rustup; do
     assert_contains install/packages-common.txt "$package"
 done
-for package in xss-lock setxkbmap xset; do
+for package in xdotool xss-lock setxkbmap xset; do
     assert_contains install/packages-i3.txt "$package"
 done
 

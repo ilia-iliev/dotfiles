@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+self_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+search_path=""
+IFS=: read -ra path_entries <<< "$PATH"
+for entry in "${path_entries[@]}"; do
+    [[ -z "$entry" || "$entry" == "$self_dir" ]] && continue
+    search_path+="${search_path:+:}$entry"
+done
+
+real_pi=$(PATH="$search_path" command -v pi || true)
+if [[ -z "$real_pi" ]]; then
+    echo "pi wrapper: underlying Pi executable not found" >&2
+    exit 127
+fi
+
+if [[ -n ${TMUX:-} ]]; then
+    exec "$real_pi" "$@"
+fi
+
+base=${PWD##*/}
+base=${base//[^[:alnum:]_-]/_}
+[[ -n $base ]] || base=root
+session=$base
+suffix=0
+
+while tmux has-session -t "=$session" 2>/dev/null; do
+    ((suffix += 1))
+    session="${base}_${suffix}"
+done
+
+printf -v command '%q ' "$real_pi" "$@"
+exec tmux new-session -s "$session" -c "$PWD" "$command"
