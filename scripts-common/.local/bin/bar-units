@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Normalise i3status byte sizes to whole units: "538.1 GiB" -> "538G".
+# Normalise i3status byte sizes to whole units: "538.1 GiB" -> "538 GB".
 #
 # i3status can drop the decimals on memory but not on disk, and always spells
 # the unit as GiB or GB. Rewriting the stream here keeps the two per-profile
@@ -9,4 +9,4 @@
 # Line buffering is what makes this usable in the bar's pipeline; without it
 # the status stream would stall in sed's output buffer.
 
-exec sed -u -E 's/([0-9]+)(\.[0-9]+)? ?([KMGT])i?B/\1\3/g'
+exec sed -u -E 's/([0-9]+)(\.[0-9]+)? ?([KMGT])i?B/\1 \3B/g'

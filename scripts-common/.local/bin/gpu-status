@@ -16,6 +16,18 @@ set -uo pipefail
 POLL_SECONDS=5
 STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/gpu-status.$$"
 
+# GPUs are joined without spaces, so the separator has to be explicit: the
+# default array expansion would put one back.
+SEPARATOR='·'
+
+# Colour follows the busiest GPU on the line. Below the active threshold the
+# block carries no colour at all, so an idle GPU keeps the bar's own statusline
+# colour and only a GPU actually doing work draws the eye.
+ACTIVE_PERCENT=40
+BUSY_PERCENT=80
+ACTIVE_COLOUR='#ddaa44'
+BUSY_COLOUR='#cc3333'
+
 poller_pid=
 
 usage() {
@@ -35,6 +47,11 @@ write_state() {
     printf '%s\n' "$text" >"$temp" && mv "$temp" "$STATE_FILE"
 }
 
+join() {
+    local IFS=$SEPARATOR
+    printf '%s' "$*"
+}
+
 sysfs_files() {
     local file
     for file in /sys/class/drm/card*/device/gpu_busy_percent; do
@@ -52,9 +69,11 @@ poll_nvidia() {
         # cleanup cannot run if the bar is killed outright rather than asked to
         # stop, so the poller also gives up once nothing is left to render for.
         kill -0 "$parent" 2>/dev/null || break
-        segments+=("$util% $((used / 1024))G")
+        # Memory rounds up. It is what the card has already handed out, so
+        # rounding down would report less in use than there is.
+        segments+=("$util%$(((used + 1023) / 1024))")
         if ((${#segments[@]} == count)); then
-            write_state "[G] ${segments[*]}"
+            write_state "[G] $(join "${segments[@]}")"
             segments=()
         fi
     done < <(nvidia-smi --query-gpu=index,utilization.gpu,memory.used \
@@ -81,7 +100,29 @@ render_sysfs() {
         read -r util <"$file" || continue
         segments+=("$util%")
     done
-    printf '[G] %s' "${segments[*]}"
+    printf '[G] %s' "$(join "${segments[@]}")"
+}
+
+# The percentages are read back out of the rendered segment, which keeps both
+# the poller and the sysfs path free of any presentation concern.
+gpu_block() {
+    local text=$1 gpu util peak=0 colour=
+    local IFS=$SEPARATOR
+
+    # The label is dropped by its trailing space; what is left is one
+    # "utilisation%memory" field per GPU.
+    for gpu in ${text#* }; do
+        util=${gpu%\%*}
+        ((util > peak)) && peak=$util
+    done
+
+    if ((peak >= BUSY_PERCENT)); then
+        colour=$BUSY_COLOUR
+    elif ((peak >= ACTIVE_PERCENT)); then
+        colour=$ACTIVE_COLOUR
+    fi
+
+    printf '{"full_text":"%s"%s}' "$text" "${colour:+,\"color\":\"$colour\"}"
 }
 
 render() {
@@ -95,9 +136,12 @@ render() {
 }
 
 wrap() {
-    local json=0 line text rest
+    local json=0 line text rest block
 
-    trap cleanup EXIT INT TERM HUP
+    # A signal handler that only cleans up would leave the loop running with a
+    # dead poller, rendering nothing for the rest of the bar's life.
+    trap cleanup EXIT
+    trap 'cleanup; exit 0' INT TERM HUP
     # Job control puts the poller in its own process group, which is what
     # makes the group kill in cleanup possible.
     set -m
@@ -120,14 +164,15 @@ wrap() {
         fi
 
         if ((json == 1)); then
+            block=$(gpu_block "$text")
             case $line in
-                ',['*) printf ',[{"full_text":"%s"},%s\n' "$text" "${line#,[}" ;;
+                ',['*) printf ',[%s,%s\n' "$block" "${line#,[}" ;;
                 '['*)
                     # A bare "[" opens the stream and carries no blocks to
                     # prepend to. Injecting into it would emit invalid JSON.
                     rest=${line#[}
                     if [[ -n $rest ]]; then
-                        printf '[{"full_text":"%s"},%s\n' "$text" "$rest"
+                        printf '[%s,%s\n' "$block" "$rest"
                     else
                         printf '%s\n' "$line"
                     fi
