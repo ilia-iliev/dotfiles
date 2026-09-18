@@ -39,4 +39,15 @@ done
     exit 1
 }
 
+[[ -f scripts-common/.config/i3status/config ]] || {
+    printf 'i3status must have one shared configuration\n' >&2
+    exit 1
+}
+for profile in i3 sway; do
+    [[ ! -e $profile/.config/i3status ]] || {
+        printf '%s must use the shared i3status configuration\n' "$profile" >&2
+        exit 1
+    }
+done
+
 printf 'install layout: ok\n'

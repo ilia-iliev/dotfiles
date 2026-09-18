@@ -8,6 +8,7 @@
 
 general {
         colors = true
+        output_format = "i3bar"
         interval = 5
 }
 
@@ -31,7 +32,7 @@ ethernet _first_ {
 
 battery all {
         format = "[B] %percentage"
-	format_down = ""
+        format_down = ""
 }
 
 disk "/" {
