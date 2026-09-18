@@ -17,7 +17,7 @@ assert_contains install.sh '"$REPO_ROOT/install/components/markatui.sh"'
 assert_contains install.sh 'dex-autostart nm-applet udiskie flameshot'
 assert_contains install.sh 'xss-lock setxkbmap'
 
-for package in dex-autostart network-manager-applet udiskie flameshot pulseaudio-utils i3status rustup; do
+for package in dex-autostart network-manager-applet udiskie flameshot pulseaudio-utils i3status rustup tmux; do
     assert_contains install/packages-common.txt "$package"
 done
 for package in xdotool xss-lock setxkbmap xset; do
@@ -49,5 +49,11 @@ for profile in i3 sway; do
         exit 1
     }
 done
+
+[[ -f scripts-common/.config/tmux/tmux.conf ]] || {
+    printf 'tmux must have a shared configuration\n' >&2
+    exit 1
+}
+assert_contains scripts-common/.config/tmux/tmux.conf 'set -s extended-keys on'
 
 printf 'install layout: ok\n'

@@ -12,6 +12,7 @@ fd-find
 ripgrep
 fzf
 zoxide
+tmux
 
 # Shared desktop tools
 dex-autostart
