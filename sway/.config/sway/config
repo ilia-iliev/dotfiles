@@ -14,12 +14,15 @@ font pango:monospace 8
 # Optional machine-specific settings are intentionally not tracked.
 include ~/.config/sway/machine.d/*
 
+# systemd integration: activates graphical-session.target so xdg-desktop-portal
+# (and thus screen sharing) comes up. Without it, portals never start.
+include /etc/sway/config.d/*.conf
+
 # wallpaper
 exec_always --no-startup-id swaybg -i ~/Pictures/wallpaper.jpg -m fill
 
 # Start XDG autostart .desktop files using dex. See also
 exec --no-startup-id dex-autostart --autostart --environment sway
-exec --no-startup-id flameshot
 
 input type:keyboard {
         xkb_layout "us,bg"
