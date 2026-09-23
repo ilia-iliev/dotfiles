@@ -50,6 +50,13 @@ for profile in i3 sway; do
     }
 done
 
+[[ ! -e scripts-common/.local/share/applications/markatui.desktop ]] || {
+    printf 'markatui.desktop names a terminal, so it belongs to each profile\n' >&2
+    exit 1
+}
+assert_contains sway/.local/share/applications/markatui.desktop 'Exec=foot -e markatui %f'
+assert_contains i3/.local/share/applications/markatui.desktop 'Exec=alacritty -e markatui %f'
+
 [[ -f scripts-common/.config/tmux/tmux.conf ]] || {
     printf 'tmux must have a shared configuration\n' >&2
     exit 1
