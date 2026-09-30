@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Run a command in a new tmux session named after the current directory.
+set -euo pipefail
+
+if [[ -n ${TMUX:-} ]]; then
+    exec "$@"
+fi
+
+base=${PWD##*/}
+base=${base//[^[:alnum:]_-]/_}
+[[ -n $base ]] || base=root
+session=$base
+suffix=0
+
+while tmux has-session -t "=$session" 2>/dev/null; do
+    ((suffix += 1))
+    session="${base}_${suffix}"
+done
+
+printf -v command '%q ' "$@"
+exec tmux new-session -s "$session" -c "$PWD" "$command"
