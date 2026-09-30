@@ -60,5 +60,21 @@
     "type": "command",
     "command": "~/.claude/statusline.sh"
   },
-  "tui": "fullscreen"
+  "enabledPlugins": {
+    "typesafe@typesafe-ai": true,
+    "rust-analyzer-lsp@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "typesafe-ai": {
+      "source": {
+        "source": "github",
+        "repo": "typesafe-ai/skills"
+      }
+    }
+  },
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
+    }
+  }
 }

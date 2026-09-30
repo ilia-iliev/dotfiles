@@ -1,6 +1,6 @@
 {
   "externalEditor": "blogawrite",
-  "lastChangelogVersion": "0.85.1",
+  "lastChangelogVersion": "0.99.1",
   "theme": "dark",
   "terminal": {
     "clearOnShrink": true,
@@ -8,7 +8,7 @@
   },
   "packages": [],
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.6-sol",
-  "hideThinkingBlock": false,
-  "defaultThinkingLevel": "medium"
+  "defaultModel": "gpt-6.1-sol",
+  "hideThinkingBlock": true,
+  "defaultThinkingLevel": "high"
 }
