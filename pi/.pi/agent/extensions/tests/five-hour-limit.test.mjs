@@ -65,6 +65,9 @@ test("cancels the continue prompt when the session closes", () => {
 
 test("recognizes only ChatGPT usage-limit errors", () => {
 	assert.equal(isUsageLimitError("You have hit your ChatGPT usage limit (plus plan). Try again in ~2 min."), true);
+	assert.equal(isUsageLimitError("Codex error: The usage limit has been reached"), true);
+	assert.equal(isUsageLimitError("Usage limit exceeded for your plan"), true);
+	assert.equal(isUsageLimitError("You've reached your usage limit"), true);
 	assert.equal(isUsageLimitError("WebSocket error"), false);
 	assert.equal(isUsageLimitError(undefined), false);
 });

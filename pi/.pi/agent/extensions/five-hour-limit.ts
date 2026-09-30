@@ -7,6 +7,7 @@ const FIVE_HOURS_IN_MINUTES = 300;
 const REQUEST_TIMEOUT_MS = 10_000;
 const CONTINUE_DELAY_MS = 3 * 60 * 1_000;
 const JWT_CLAIM_PATH = "https://api.openai.com/auth";
+const USAGE_LIMIT_MESSAGES = ["usage limit"];
 
 export interface RateLimitWindow {
 	usedPercent: number;
@@ -25,7 +26,8 @@ interface UsageResponse {
 }
 
 export function isUsageLimitError(errorMessage: string | undefined): boolean {
-	return errorMessage?.toLowerCase().includes("hit your chatgpt usage limit") ?? false;
+	const message = errorMessage?.toLowerCase() ?? "";
+	return USAGE_LIMIT_MESSAGES.some((limitMessage) => message.includes(limitMessage));
 }
 
 type ScheduleTimer = (callback: () => void, delay: number) => ReturnType<typeof setTimeout>;
