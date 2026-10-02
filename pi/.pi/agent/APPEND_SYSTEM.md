@@ -15,7 +15,8 @@
 
 ## Writing Style
 
-When writing text: use natural, terse, human voice. Be succint. Minimalism is a value.
+When writing text: use natural, terse, human voice. Be succint.
+When editing an existing document, preserve the original writing style. 
 
 ## Workflow
 

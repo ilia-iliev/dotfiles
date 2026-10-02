@@ -1,7 +1,8 @@
 {
   "externalEditor": "blogawrite",
-  "lastChangelogVersion": "0.99.1",
+  "lastChangelogVersion": "1.0.0",
   "theme": "dark",
+  "tuiMode": "regular",
   "terminal": {
     "clearOnShrink": true,
     "showTerminalProgress": false
