@@ -124,7 +124,6 @@ export default function (pi: ExtensionAPI): void {
 			await ctx.newSession({
 				withSession: async (newCtx) => {
 					hideHeader(newCtx);
-					newCtx.ui.setEditorText("");
 				},
 			});
 		},

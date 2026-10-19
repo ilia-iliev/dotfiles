@@ -4,11 +4,7 @@ import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { orderSupplementalStats } from "./lib/footer-stats.ts";
 
 function formatTokens(count: number): string {
-	if (count < 1_000) return `${count}`;
-	if (count < 10_000) return `${(count / 1_000).toFixed(1)}k`;
-	if (count < 1_000_000) return `${Math.round(count / 1_000)}k`;
-	if (count < 10_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-	return `${Math.round(count / 1_000_000)}M`;
+	return `${Math.floor(count / 1_000)}k`;
 }
 
 function footerPath(cwd: string): string {
@@ -58,11 +54,11 @@ export default function (pi: ExtensionAPI): void {
 				render(width: number): string[] {
 					const stats = [];
 					const context = ctx.getContextUsage();
-					const contextWindow = context?.contextWindow ?? ctx.model?.contextWindow ?? 0;
+					const contextTokens = context?.tokens;
 					const contextPercent = context?.percent;
-					const contextText = contextPercent === null || contextPercent === undefined
-						? `?/${formatTokens(contextWindow)}`
-						: `${Math.round(contextPercent)}%/${formatTokens(contextWindow)}`;
+					const contextText = contextTokens === null || contextTokens === undefined
+						? "?"
+						: formatTokens(contextTokens);
 					stats.push(
 						contextPercent !== undefined && contextPercent !== null && contextPercent >= 90
 							? theme.fg("error", contextText)

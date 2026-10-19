@@ -119,6 +119,31 @@ async function readRateLimit(ctx: ExtensionContext): Promise<RateLimitWindow> {
 	return fetchRateLimit(accessToken);
 }
 
+async function startUnusedWindow(ctx: ExtensionContext, limit: RateLimitWindow): Promise<RateLimitWindow> {
+	// WHAM rounds usage, so zero is only a best-effort indicator of an unused window.
+	if (ctx.mode !== "tui" || ctx.model?.provider !== "openai-codex" || limit.usedPercent !== 0) return limit;
+	if (!ctx.isIdle()) return limit;
+	if (ctx.sessionManager.getBranch().some((entry) => entry.type === "message" || entry.type === "compaction")) {
+		return limit;
+	}
+
+	// A usage read does not start the window. Make a separate, tool-free request;
+	// neither its prompt nor its response is added to the session or agent loop.
+	const response = await ctx.modelRegistry.streamSimple(ctx.model, {
+		messages: [{ role: "user", content: "Reply only with OK.", timestamp: Date.now() }],
+	}, {
+		maxTokens: 1,
+		toolChoice: "none",
+		transport: "sse",
+		cacheRetention: "none",
+		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+	}).result();
+	if (response.stopReason === "error" || response.stopReason === "aborted") {
+		throw new Error(response.errorMessage ?? "Could not start the Codex usage window");
+	}
+	return readRateLimit(ctx);
+}
+
 function formatTime(timestampMs: number): string {
 	return new Date(timestampMs).toLocaleTimeString([], {
 		hour: "2-digit",
@@ -128,10 +153,10 @@ function formatTime(timestampMs: number): string {
 }
 
 function showRateLimit(limit: RateLimitWindow, scheduledFor: number | undefined, ctx: ExtensionContext): void {
-	const remaining = Math.max(0, Math.min(100, Math.round(100 - limit.usedPercent)));
-	const color = remaining <= 10 ? "error" : remaining <= 30 ? "warning" : "dim";
+	const used = Math.max(0, Math.min(100, Math.round(limit.usedPercent)));
+	const color = used >= 90 ? "error" : used >= 70 ? "warning" : "dim";
 	const reset = limit.resetsAt === null ? "--:--" : formatTime(limit.resetsAt * 1_000);
-	const percentage = ctx.ui.theme.fg(color, `${remaining}%`);
+	const percentage = ctx.ui.theme.fg(color, `${used}%`);
 	const scheduled = scheduledFor === undefined
 		? ""
 		: ctx.ui.theme.fg("accent", " → continue");
@@ -144,9 +169,10 @@ export default function (pi: ExtensionAPI) {
 	let latestLimit: RateLimitWindow | undefined;
 	let warned = false;
 
-	function refreshRateLimit(ctx: ExtensionContext): Promise<RateLimitWindow | undefined> {
+	function refreshRateLimit(ctx: ExtensionContext, startWindow = false): Promise<RateLimitWindow | undefined> {
 		if (refresh) return refresh;
 		refresh = readRateLimit(ctx)
+			.then((limit) => startWindow ? startUnusedWindow(ctx, limit) : limit)
 			.then((limit) => {
 				latestLimit = limit;
 				showRateLimit(limit, continuationScheduler?.scheduledFor(), ctx);
@@ -174,7 +200,7 @@ export default function (pi: ExtensionAPI) {
 				else pi.sendUserMessage("continue", { deliverAs: "followUp" });
 			})
 			: undefined;
-		return refreshRateLimit(ctx);
+		return refreshRateLimit(ctx, true);
 	});
 	pi.on("tool_execution_end", async (_event, ctx) => refreshRateLimit(ctx));
 	pi.on("message_end", async (event, ctx) => {
