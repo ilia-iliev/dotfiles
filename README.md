@@ -38,6 +38,17 @@ Desktop-specific files belong in `sway`, `foot`, or `i3`.
 
 Do not stow `sway` and `i3` together. Both provide an i3status configuration.
 
+## Screen locking
+
+Both profiles power off all displays after locking. Keyboard or mouse activity
+wakes the lock screen; after 15 seconds without input, the displays power off
+again. Unlocking restores normal display behavior. Audio delays automatic
+locking, but does not keep an already locked screen awake.
+
+Lock with `Mod+l`. Idle locking and locking before suspend use the same helper.
+After updating an existing installation, restow the active profile and log out
+and back in so the idle/lock daemons pick up the changes. Do not stow both profiles.
+
 ## Manual state
 
 The installer reports state that cannot be kept safely in this repository:

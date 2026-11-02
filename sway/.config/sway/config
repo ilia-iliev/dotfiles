@@ -58,8 +58,8 @@ bindsym $mod+d exec --no-startup-id rofi -show drun
 
 # Lock after 10 minutes of inactivity. Active audio inhibits the idle timer.
 exec --no-startup-id sway-audio-idle-inhibit
-exec --no-startup-id swayidle -w timeout 600 'swaylock --config /dev/null --color 000000'
-bindsym $mod+l exec --no-startup-id swaylock --config /dev/null --color 000000
+exec --no-startup-id swayidle -w timeout 600 '~/.local/bin/lock-screen' before-sleep '~/.local/bin/lock-screen' lock '~/.local/bin/lock-screen'
+bindsym $mod+l exec --no-startup-id ~/.local/bin/lock-screen
 
 # Capture the focused window, save it, and copy it to the clipboard.
 bindsym Print exec --no-startup-id sh -c 'g=$(swaymsg -t get_tree | jq -r '"'"'.. | objects | select(.focused? == true) | .rect | "\(.x),\(.y) \(.width)x\(.height)"'"'"'); grim -g "$g" - | tee "$HOME/Pictures/Screenshots/$(date +%F-%H%M%S).png" | wl-copy --type image/png'

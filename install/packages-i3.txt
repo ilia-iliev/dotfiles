@@ -9,6 +9,7 @@ xclip
 xdotool
 unclutter-xfixes
 xss-lock
+systemd
 setxkbmap
 xset
 kitty

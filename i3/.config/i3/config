@@ -33,7 +33,7 @@ exec_always --no-startup-id pkill -x flameshot; flameshot
 exec_always --no-startup-id setxkbmap -layout us,bg -variant ,phonetic -option grp:shifts_toggle
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork -c 222222
+exec --no-startup-id xss-lock --transfer-sleep-lock -- ~/.local/bin/lock-screen
 
 # disable network notifications
 exec --no-startup-id nm-applet --indicator
@@ -61,7 +61,7 @@ floating_modifier $mod
 # or left-clicking anywhere into the window while holding the floating modifier.
 tiling_drag modifier titlebar
 
-bindsym $mod+l exec i3lock -c 222222
+bindsym $mod+l exec loginctl lock-session
 
 # kill focused window
 bindsym $mod+q kill

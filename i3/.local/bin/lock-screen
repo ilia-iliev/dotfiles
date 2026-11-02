@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# xss-lock keeps this wrapper alive until unlock. Serialize all lock requests.
+exec {guard_fd}>"${XDG_RUNTIME_DIR:?}/lock-screen.lock"
+flock -n "$guard_fd" || exit 0
+
+settings=$(LC_ALL=C xset q)
+read -r standby suspend off < <(awk '/Standby:/ {print $2, $4, $6}' <<<"$settings")
+
+# i3lock's default fork happens only after it has secured the screen. Keep the
+# real sleep inhibitor here, not in the daemon, until that handshake completes.
+(
+    exec {guard_fd}>&-
+    if [[ -n ${XSS_SLEEP_LOCK_FD:-} ]]; then
+        exec {XSS_SLEEP_LOCK_FD}<&-
+        unset XSS_SLEEP_LOCK_FD
+    fi
+    exec i3lock -c 222222
+)
+if [[ -n ${XSS_SLEEP_LOCK_FD:-} ]]; then
+    exec {XSS_SLEEP_LOCK_FD}<&-
+fi
+
+restore() {
+    xset dpms force on
+    xset dpms "$standby" "$suspend" "$off"
+    if [[ $settings == *'DPMS is Disabled'* ]]; then
+        xset -dpms
+    fi
+}
+trap restore EXIT
+trap 'exit 0' HUP INT TERM
+
+# Input wakes DPMS automatically; inactivity powers down again while locked.
+xset +dpms dpms 0 0 15
+xset dpms force off
+while pgrep -u "$UID" -x i3lock >/dev/null; do
+    sleep 0.2
+done

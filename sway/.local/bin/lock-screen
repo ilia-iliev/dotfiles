@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec {guard_fd}>"${XDG_RUNTIME_DIR:?}/lock-screen.lock"
+flock -n "$guard_fd" || exit 0
+
+# Return only after Sway confirms the session is secured. Do not let the locker
+# inherit our guard: the monitor below owns it until the lock session ends.
+swaylock --daemonize --config /dev/null --color 000000 {guard_fd}>&-
+
+# Let the caller (including swayidle's before-sleep hook) finish at readiness,
+# rather than waiting for unlock. This monitor retains the guard in the meantime.
+(
+    state_dir=$(mktemp -d "$XDG_RUNTIME_DIR/lock-screen.XXXXXX")
+    export LOCK_SCREEN_INITIALIZED="$state_dir/initialized"
+    idle_pid=
+    restore() {
+        if [[ -n $idle_pid ]] && kill -0 "$idle_pid" 2>/dev/null; then
+            kill "$idle_pid"
+            wait "$idle_pid" || : # Expected SIGTERM from our cleanup.
+        fi
+        swaymsg 'output * power on'
+        rm -rf -- "$state_dir"
+    }
+    trap restore EXIT
+    trap 'exit 0' HUP INT TERM
+
+    # Sway ignores application idle inhibitors while locked. Use an independent
+    # timer, with no user config, that exists only for this lock session.
+    # The zero-timeout handshake forces initial idle AFTER swayidle is ready:
+    # power-off then runs with its resume callback armed, even on a manual lock.
+    # Subsequent activity restores the normal 15-second timeout.
+    swayidle -C /dev/null -w \
+        timeout 0 'if [ ! -e "$LOCK_SCREEN_INITIALIZED" ]; then touch "$LOCK_SCREEN_INITIALIZED"; kill -USR1 "$PPID"; fi' \
+        timeout 15 'swaymsg "output * power off"' \
+        resume 'swaymsg "output * power on"' {guard_fd}>&- &
+    idle_pid=$!
+    while pgrep -u "$UID" -x swaylock >/dev/null; do
+        # If the wake monitor fails, restore power rather than strand the user.
+        kill -0 "$idle_pid"
+        sleep 0.2
+    done
+) &

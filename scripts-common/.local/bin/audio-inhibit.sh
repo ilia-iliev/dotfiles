@@ -1,9 +1,9 @@
 #!/bin/bash
-# Checks for active audio every 30 seconds and resets X11 idle timer
+# Active audio delays idle locking, but never resets an already locked session.
 
 while true; do
     if pactl list sink-inputs | grep -q "Corked: no"; then
-        xset s reset
+        pkill -HUP -u "$UID" -x xss-lock
     fi
     sleep 30
 done

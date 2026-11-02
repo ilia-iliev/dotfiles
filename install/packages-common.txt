@@ -21,6 +21,8 @@ udiskie
 flameshot
 pulseaudio-utils
 i3status
+procps-ng
+util-linux
 
 # Yazi previews
 ffmpegthumbnailer
