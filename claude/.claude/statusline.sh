@@ -19,4 +19,4 @@ else
 fi
  
 # Output the formatted statusline
-echo "${MODEL} | Context: ${CONTEXT}% | Rate Limit: ${RATE_LIMIT}% | Reset: ${RESET_TIME}"
+echo "${MODEL} | Ctx: ${CONTEXT}% | Limit: ${RATE_LIMIT}% | ${RESET_TIME}"
