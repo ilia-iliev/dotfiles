@@ -3,7 +3,10 @@
     "EDITOR": "markatui"
   },
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "auto",
+    "deny": [
+      "AskUserQuestion"
+    ]
   },
   "model": "opus",
   "hooks": {
@@ -61,8 +64,8 @@
     "command": "~/.claude/statusline.sh"
   },
   "enabledPlugins": {
-    "typesafe@typesafe-ai": true,
-    "rust-analyzer-lsp@claude-plugins-official": true
+    "typesafe@typesafe-ai": false,
+    "rust-analyzer-lsp@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {
     "typesafe-ai": {
@@ -74,7 +77,8 @@
   },
   "modelSettings": {
     "claude-opus-5-5": {
-      "effortLevel": "high"
+      "effortLevel": "high",
+      "autoCompactWindow": 400000
     }
   }
 }
