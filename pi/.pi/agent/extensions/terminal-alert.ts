@@ -30,14 +30,14 @@ export function resolveTerminalTarget(
 ): TerminalTarget | undefined {
 	let pid = process.ppid;
 	let alacrittyWindowId = environment.ALACRITTY_WINDOW_ID;
+	let swaySocket = environment.SWAYSOCK;
 
 	if (environment.TMUX) {
 		pid = Number(getTmuxClientPid()?.trim());
 		if (!Number.isInteger(pid) || pid < 2) return;
-		alacrittyWindowId = variable(
-			readProcessFile(`/proc/${pid}/environ`) ?? "",
-			"ALACRITTY_WINDOW_ID",
-		);
+		const clientEnvironment = readProcessFile(`/proc/${pid}/environ`) ?? "";
+		alacrittyWindowId = variable(clientEnvironment, "ALACRITTY_WINDOW_ID");
+		swaySocket = variable(clientEnvironment, "SWAYSOCK");
 	}
 
 	if (alacrittyWindowId && /^\d+$/.test(alacrittyWindowId)) {
@@ -52,7 +52,7 @@ export function resolveTerminalTarget(
 		if (command === "foot" || command === "footclient") {
 			return {
 				command: "swaymsg",
-				args: [`[pid=${pid}]`, "urgent", "enable"],
+				args: [...(swaySocket ? ["-s", swaySocket] : []), `[pid=${pid}]`, "urgent", "enable"],
 			};
 		}
 		const parent = readProcessFile(`/proc/${pid}/status`)?.match(/^PPid:\s+(\d+)$/m);
