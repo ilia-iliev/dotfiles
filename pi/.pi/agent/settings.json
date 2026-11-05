@@ -10,6 +10,6 @@
   "packages": [],
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.1-sol",
-  "hideThinkingBlock": true,
+  "hideThinkingBlock": false,
   "defaultThinkingLevel": "high"
 }
